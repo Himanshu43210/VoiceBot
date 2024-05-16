@@ -14,7 +14,7 @@ const VoiceChatBot = () => {
   const isPlayingRef = useRef(false);
 
   useEffect(() => {
-    socket.current = io('http://localhost:8080');
+    socket.current = io('https://voicebot-clzb.onrender.com');
 
     socket.current.on('connect', () => {
       setIsConnected(true);

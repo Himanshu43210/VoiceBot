@@ -15,7 +15,7 @@ const SpeechToText = () => {
   const sourceBufferRef = useRef(null);
 
   useEffect(() => {
-    socket.current = io('http://localhost:8080');
+    socket.current = io('https://voicebot-clzb.onrender.com');
 
     socket.current.on('connect', () => {
       setIsConnected(true);
