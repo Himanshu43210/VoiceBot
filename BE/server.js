@@ -3,6 +3,7 @@ const http = require('http');
 const https = require('https');
 const { Server } = require('socket.io');
 require('dotenv').config();
+const axios = require('axios');
 
 const app = express();
 const server = http.createServer(app);
@@ -16,12 +17,29 @@ const io = new Server(server, {
 const deepgramUrl = "https://api.deepgram.com/v1/speak?model=aura-asteria-en";
 const { Configuration, OpenAIApi } = require('openai');
 
+let PROMPT_PREFIX = "I need a very short and crisp answer:";
+let model = "gpt-4o";
+
+// Function to update PROMPT_PREFIX and model from the external API
+async function updateServerData() {
+  try {
+    const response = await axios.get('https://api.npoint.io/2cd455b999858d26894d');
+    const data = response.data;
+    PROMPT_PREFIX = data.prompt;
+    model = data.model;
+    console.log('Server data updated:', { PROMPT_PREFIX, model });
+  } catch (error) {
+    console.error('Error fetching data from npoint API:', error.message);
+  }
+}
+
+// Initial update on server start
+updateServerData();
+
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
-
-const PROMPT_PREFIX = "I need a very short and crisp answer:";
 
 io.on('connection', (socket) => {
   console.log('Client connected');
@@ -31,7 +49,7 @@ io.on('connection', (socket) => {
 
     try {
       const response = await openai.createChatCompletion({
-        model: 'gpt-4',
+        model: model,
         messages: [
           { role: 'system', content: PROMPT_PREFIX },
           { role: 'user', content: message }
@@ -91,6 +109,16 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Client disconnected');
   });
+});
+
+// Define the /updateServer route
+app.get('/updateServer', async (req, res) => {
+  try {
+    await updateServerData();
+    res.status(200).send('Server data updated successfully');
+  } catch (error) {
+    res.status(500).send('Error updating server data');
+  }
 });
 
 server.listen(8080, () => {
